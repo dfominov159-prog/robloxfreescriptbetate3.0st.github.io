@@ -1931,6 +1931,389 @@
       document.documentElement.classList.add(view);
     })();
   </script>
+  <!-- ════════════════════════════════════════════════════════════
+       БЛОК 10.6. КЛЮЧ + ОКНО СКРИПТА (SNIPER ARENA)
+       — кнопка «СГЕНЕРИРОВАТЬ КЕЙ» в шапке;
+       — модалка генератора ключа (срок 7 дней, копирование);
+       — страница скрипта #script-sniper-arena: как получить
+         ключ + сам код чита в блоке с кнопкой «СКОПИРОВАТЬ».
+       ════════════════════════════════════════════════════════════ -->
+  <style>
+    /* ── КНОПКА КЛЮЧА В ШАПКЕ (заливка неоном — главная по клику) ── */
+    .btn-key {
+      position: relative;
+      overflow: hidden;
+      padding: 9px 16px;
+      background: var(--neon);
+      border: none;
+      border-radius: 9px;
+      color: var(--bg);
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(var(--neon-rgb), 0.4);
+      animation: key-breathe 2.6s ease-in-out infinite;
+      transition: transform 0.3s var(--ease), box-shadow 0.3s ease,
+                  filter 0.3s ease;
+    }
+
+    .btn-key:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 0 30px rgba(var(--neon-rgb), 0.85);
+    }
+
+    .btn-key:active { transform: translateY(0) scale(0.97); }
+
+    /* Мягкое «дыхание» кнопки — чтобы глаз цеплялся */
+    @keyframes key-breathe {
+      0%, 100% { box-shadow: 0 0 14px rgba(var(--neon-rgb), 0.3); }
+      50%      { box-shadow: 0 0 26px rgba(var(--neon-rgb), 0.65); }
+    }
+
+    /* Короткая подпись для узких экранов */
+    .btn-key-short { display: none; }
+
+    /* ── МОДАЛКА ГЕНЕРАТОРА КЛЮЧА ── */
+    .key-box {
+      position: relative;
+      text-align: center;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(var(--neon-rgb), 0.1), transparent 65%),
+        linear-gradient(165deg, #0b0f14, #07090d);
+    }
+
+    /* Косой блик при открытии — тот же приём, что у генератора кода */
+    .key-box::before {
+      content: "";
+      position: absolute;
+      top: -60%;
+      left: -60%;
+      width: 60%;
+      height: 220%;
+      background: linear-gradient(90deg, transparent, rgba(var(--neon-rgb), 0.12), transparent);
+      transform: rotate(18deg);
+      animation: gen-sweep 1.4s var(--ease) 0.15s;
+      pointer-events: none;
+    }
+
+    /* Терминальные строки «процесса выдачи» */
+    .key-term {
+      min-height: 58px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 11.5px;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .key-term .gen-line:last-child { color: var(--neon); }
+
+    /* Сам ключ — крупно и со свечением */
+    .key-code {
+      display: inline-block;
+      width: 100%;
+      padding: 16px 8px;
+      font-size: clamp(19px, 4.6vw, 29px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fff;
+      text-shadow: 0 0 18px rgba(var(--neon-rgb), 0.75), 0 0 46px rgba(var(--neon-rgb), 0.35);
+      border-top: 1px solid rgba(var(--neon-rgb), 0.3);
+      border-bottom: 1px solid rgba(var(--neon-rgb), 0.3);
+      background: rgba(var(--neon-rgb), 0.04);
+      overflow-wrap: anywhere;
+      user-select: all;
+      transition: opacity 0.3s ease;
+    }
+
+    .key-code.pending { opacity: 0.5; text-shadow: none; color: var(--muted); letter-spacing: 6px; }
+    .key-code.ready   { animation: code-pulse 1.6s ease-in-out infinite; }
+
+    /* Четыре инфо-ячейки: владелец / выдан / до / осталось */
+    .key-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+      text-align: left;
+    }
+
+    .key-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 9px 11px;
+      background: rgba(138, 153, 173, 0.06);
+      border: 1px solid rgba(138, 153, 173, 0.16);
+      border-radius: 10px;
+    }
+
+    .key-cell span {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .key-cell b {
+      font-size: 13.5px;
+      font-weight: 900;
+      color: #fff;
+      overflow-wrap: anywhere;
+    }
+
+    .key-cell b.ok   { color: var(--neon); }
+    .key-cell b.dead { color: #ff5a72; }
+
+    /* Три шага «как получить ключ» */
+    .key-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 14px;
+      text-align: left;
+    }
+
+    .key-steps p {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .key-steps p i {
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      font-style: normal;
+      font-size: 11.5px;
+      font-weight: 900;
+      color: var(--bg);
+      background: var(--neon);
+      border-radius: 7px;
+      box-shadow: 0 0 12px rgba(var(--neon-rgb), 0.35);
+    }
+
+    /* Подпись под кнопками */
+    .key-note {
+      margin-top: 13px;
+      font-size: 11.5px;
+      font-weight: 700;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .key-note b { color: var(--neon); }
+
+    /* ── СТРАНИЦА СКРИПТА (#script-sniper-arena) ──
+       Висит вне <main>: в view-script всё <main> скрыто,
+       поэтому этот блок живёт отдельно и показывается
+       только своим классом на <html>. */
+    .script-page { display: none; }
+
+    html.view-script .script-page { display: block; }
+
+    .sp-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 26px 22px 60px;
+      animation: sp-in 0.5s var(--ease) both;
+    }
+
+    @keyframes sp-in {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* Верхняя панель: назад + название игры */
+    .sp-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .sp-back {
+      padding: 10px 15px;
+      background: rgba(138, 153, 173, 0.08);
+      border: 1.5px solid rgba(138, 153, 173, 0.4);
+      border-radius: 10px;
+      color: #d7dde6;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+
+    .sp-back:hover {
+      border-color: var(--neon);
+      color: var(--neon);
+      box-shadow: 0 0 16px rgba(var(--neon-rgb), 0.35);
+    }
+
+    .sp-title {
+      font-size: clamp(20px, 3.4vw, 30px);
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #fff;
+      margin: 0;
+    }
+
+    .sp-title em { color: var(--neon); font-style: normal; }
+
+    /* Бейджи под заголовком */
+    .sp-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+
+    .sp-tag {
+      padding: 7px 12px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+      color: var(--neon);
+      background: rgba(var(--neon-rgb), 0.08);
+      border: 1px solid rgba(var(--neon-rgb), 0.35);
+      border-radius: 999px;
+    }
+
+    .sp-tag.mut {
+      color: var(--muted);
+      background: rgba(138, 153, 173, 0.07);
+      border-color: rgba(138, 153, 173, 0.3);
+    }
+
+    /* Панель «как получить ключ» */
+    .sp-keybox {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding: 16px 18px;
+      margin-bottom: 24px;
+      background: linear-gradient(120deg, rgba(var(--neon-rgb), 0.09), rgba(5, 6, 8, 0.4));
+      border: 1px solid rgba(var(--neon-rgb), 0.35);
+      border-radius: 14px;
+    }
+
+    .sp-keybox .sp-kb-text { font-size: 13.5px; font-weight: 800; color: var(--muted); line-height: 1.55; }
+    .sp-keybox .sp-kb-text b { color: #fff; }
+    .sp-keybox .sp-kb-text i { color: var(--neon); font-style: normal; }
+
+    .sp-key-state {
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--neon);
+      white-space: nowrap;
+    }
+
+    .sp-key-state.dead { color: #ff5a72; }
+
+    /* Секция с кодом */
+    .sp-code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .sp-code-head h4 {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--neon);
+      margin: 0;
+    }
+
+    .sp-copy {
+      padding: 11px 18px;
+      background: var(--neon);
+      border: none;
+      border-radius: 10px;
+      color: var(--bg);
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: box-shadow 0.25s ease, transform 0.25s var(--ease);
+    }
+
+    .sp-copy:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 24px rgba(var(--neon-rgb), 0.7);
+    }
+
+    .sp-code {
+      max-height: 440px;
+      overflow: auto;
+      margin: 0;
+      padding: 18px;
+      background: #05070a;
+      border: 1px solid rgba(var(--neon-rgb), 0.25);
+      border-radius: 14px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #b9f7d3;
+      white-space: pre;
+      tab-size: 2;
+      scrollbar-width: thin;
+      scrollbar-color: var(--neon) transparent;
+    }
+
+    .sp-code::-webkit-scrollbar { width: 8px; height: 8px; }
+    .sp-code::-webkit-scrollbar-thumb { background: rgba(var(--neon-rgb), 0.5); border-radius: 8px; }
+
+    .sp-warn {
+      margin-top: 18px;
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .sp-warn b { color: #ff5a72; }
+
+    /* ── АДАПТИВ ── */
+    @media (max-width: 780px) {
+      .btn-key-full { display: none; }
+      .btn-key-short { display: inline; }
+    }
+
+    @media (max-width: 480px) {
+      .status { display: none; }          /* места мало — статус убираем */
+      .btn-key { padding: 8px 11px; font-size: 11px; letter-spacing: 0.8px; }
+      .key-grid { grid-template-columns: 1fr; }
+      .sp-inner { padding: 20px 15px 50px; }
+      .sp-code { max-height: 320px; font-size: 11.5px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -2002,6 +2385,18 @@
     </div>
 
     <div class="head-right">
+      <!-- ═══ КНОПКА «СГЕНЕРИРОВАТЬ КЕЙ» (СПРАВА СВЕРХУ) ═══
+           Главный новый элемент шапки: выдаёт ключ доступа
+           к читу SNIPER ARENA на 7 дней.
+           Гость → тост «зарегистрируйся» + открывается форма.
+           Юзер → модалка генератора: ключ, срок, копирование.
+           На узких экранах подпись ужимается до «⚡ КЕЙ». -->
+      <button class="btn-key" type="button" id="btnKeyGen"
+              title="Ключ доступа к читу — 7 дней">
+        <span class="btn-key-full">⚡ СГЕНЕРИРОВАТЬ КЕЙ</span>
+        <span class="btn-key-short">⚡ КЕЙ</span>
+      </button>
+
       <!-- Кнопка входа — для гостей -->
       <button class="btn-login" type="button" id="btnLogin">ВОЙТИ</button>
 
@@ -2209,6 +2604,63 @@
     </div><!-- /#showcaseWrap — конец витрины (живёт в отдельном окне) -->
   </main>
 
+  <!-- ════════════════════════════════════════════════════════════════
+       ОТДЕЛЬНОЕ ОКНО СКРИПТА: index.html#script-sniper-arena
+       Блок лежит ВНЕ <main> — в этом виде (view-script) всё <main>,
+       шапка и подвал скрыты, поэтому страница скрипта показывается
+       сама по классу на <html>.
+       Содержимое: как получить ключ + ССЫЛКА-ЛОАДЕР для Xeno.
+       Исходник чита здесь НЕ хранится (анти-кража): страница отдаёт
+       одну строку loadstring(...HttpGet("s.lua")...), а сам код лежит
+       обфусцированным файлом s.lua рядом с index.html.
+       Остальные окна (#script-rivals, #script-mm2…) остаются пустыми.
+       ════════════════════════════════════════════════════════════════ -->
+  <section class="script-page" id="scriptPage" aria-label="Скрипт SNIPER ARENA">
+    <div class="sp-inner">
+
+      <!-- Верх: назад + название -->
+      <div class="sp-top">
+        <button class="sp-back" type="button" id="spBack">← На сайт</button>
+        <h2 class="sp-title">SNIPER ARENA <em>· SUPER CHEAT</em></h2>
+      </div>
+
+      <!-- Что внутри -->
+      <div class="sp-tags">
+        <span class="sp-tag">ESP</span>
+        <span class="sp-tag">АИМБОТ</span>
+        <span class="sp-tag">ВИЗУАЛ</span>
+        <span class="sp-tag">НАСТРОЙКИ</span>
+        <span class="sp-tag">КЛЮЧ · 7 ДНЕЙ</span>
+        <span class="sp-tag mut">STATUS: UNDETECTED</span>
+      </div>
+
+      <!-- Панель «как получить ключ» -->
+      <div class="sp-keybox">
+        <div class="sp-kb-text">
+          <b>Ключ обязателен.</b> Зарегистрируйся → жми <i>«СГЕНЕРИРОВАТЬ КЕЙ»</i>
+          справа в шапке → вставь ключ в чит при запуске.
+          Ключ живёт <b>7 дней</b>, потом его нужно сгенерировать заново.
+        </div>
+        <div class="sp-key-state" id="spKeyState">КЛЮЧ НЕ ПОЛУЧЕН</div>
+        <button class="sp-copy" type="button" id="spKeyBtn">СГЕНЕРИРОВАТЬ КЕЙ</button>
+      </div>
+
+      <!-- ССЫЛКА-ЛОАДЕР вместо кода: исходник чита на странице не лежит,
+           в Xeno вставляется одна строка, которая тянет s.lua с того же хоста -->
+      <div class="sp-code-head">
+        <h4>Ссылка для инжектора · вставь в Xeno</h4>
+        <button class="sp-copy" type="button" id="spCopy">СКОПИРОВАТЬ ССЫЛКУ</button>
+      </div>
+      <pre class="sp-code" id="spLink"><code>Сборка ссылки…</code></pre>
+
+      <p class="sp-warn">
+        <b>Внимание:</b> нужен экзекутор Roblox с поддержкой Drawing API,
+        writefile/readfile. Использование читов нарушает правила Roblox —
+        возможен бан аккаунта игры. Ключ проверяется локально внутри чита.
+      </p>
+    </div>
+  </section>
+
 
   <!-- ════════════════════════════════════════════════════════════════
        ПОДВАЛ (FOOTER)
@@ -2321,7 +2773,53 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════════
-       МОДАЛКА НАСТРОЕК АККАУНТА
+       ГЕНЕРАТОР КЛЮЧА ДОСТУПА (7 ДНЕЙ)
+       Кнопка «СГЕНЕРИРОВАТЬ КЕЙ» справа в шапке открывает это окно.
+       Ключ формата SBX7-<срок>-<подпись> — тот же алгоритм, что
+       проверяет сам чит SNIPER ARENA (CRC32 от «префикс|срок|секрет»).
+       Пока ключ жив — повторная генерация заблокирована; когда
+       истечёт, кнопка снова станет активной.
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="keyModal" role="dialog" aria-modal="true" aria-labelledby="keyTitle">
+    <div class="modal key-box">
+      <div class="modal-head">
+        <h3 id="keyTitle">ГЕНЕРАТОР <em>КЛЮЧА</em></h3>
+        <button class="modal-x" type="button" data-close aria-label="Закрыть">✕</button>
+      </div>
+
+      <!-- Терминал: строки выдачи появляются по одной -->
+      <div class="key-term" id="keyTerm" aria-hidden="true"></div>
+
+      <!-- Сам ключ -->
+      <div class="key-code pending" id="keyCode">SBX7-·······-······</div>
+
+      <!-- Данные ключа -->
+      <div class="key-grid">
+        <div class="key-cell"><span>Владелец</span><b id="keyOwner">—</b></div>
+        <div class="key-cell"><span>Статус</span><b id="keyStatus">—</b></div>
+        <div class="key-cell"><span>Выдан</span><b id="keyIssued">—</b></div>
+        <div class="key-cell"><span>Действует до</span><b id="keyExpires">—</b></div>
+      </div>
+
+      <!-- Как пользоваться -->
+      <div class="key-steps">
+        <p><i>1</i> Зарегистрируйся или войди в аккаунт</p>
+        <p><i>2</i> Нажми «СГЕНЕРИРОВАТЬ КЕЙ» справа в шапке</p>
+        <p><i>3</i> Вставь ключ в чит SNIPER ARENA при запуске</p>
+      </div>
+
+      <div class="gen-actions">
+        <button class="btn-gen-alt" type="button" id="keyCopy">СКОПИРОВАТЬ</button>
+        <button class="btn-gen" type="button" id="keyRegen">СГЕНЕРИРОВАТЬ</button>
+      </div>
+
+      <p class="key-note">
+        Ключ живёт <b>7 дней</b>. После истечения он перестанет работать —
+        открой эту же кнопку и сгенерируй новый.
+      </p>
+    </div>
+  </div>
+
        Инфо о аккаунте + тумблеры интерфейса + удаление аккаунта.
        ════════════════════════════════════════════════════════════════ -->
   <div class="modal-overlay" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="setTitle">
@@ -2391,6 +2889,12 @@
       <button class="btn-danger" type="button" id="btnDelete">Удалить аккаунт и выйти</button>
     </div>
   </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ИСХОДНИК ЧИТА SNIPER ARENA (не исполняется браузером)
+       type="text/plain" — браузер просто хранит текст, а скрипт
+       сайта подставляет его в блок кода на странице #script-sniper-arena.
+       ════════════════════════════════════════════════════════════════ -->
 
   <!-- Контейнер всплывающих уведомлений -->
   <div id="toasts" aria-live="polite"></div>
@@ -3072,6 +3576,10 @@
         }
         closeModal(authModal);
         closeModal(settingsModal);
+        /* Ключевая модалка тоже закрывается по Esc (keyModal
+           объявлен ниже, в ЧАСТИ 11 — к моменту нажатия он уже
+           заполнен, а до этого тут просто undefined) */
+        if (keyModal && keyModal.classList.contains('open')) closeModal(keyModal);
       }
 
       [authModal, settingsModal].forEach(function (m) {
@@ -3660,6 +4168,349 @@
         closeModal(settingsModal);
         toast('Аккаунт удалён', 'err');
       });
+
+
+      /* ═══════════════════════════════════════════════════════
+         ЧАСТЬ 11. КЛЮЧ ДОСТУПА К ЧИТУ (7 ДНЕЙ) + СТРАНИЦА СКРИПТА
+         ─ ключ формирует САЙТ, чит SNIPER ARENA проверяет его
+           ТЕМ ЖЕ алгоритмом: CRC32 от «SBX7|срок|секрет» → base36.
+           Сервера нет (хостинг статический), поэтому проверка
+           идёт локально — это защита от «случайных», не от хакеров;
+         ─ кнопка «СГЕНЕРИРОВАТЬ КЕЙ» справа в шапке: гость → форма
+           регистрации, юзер → модалка генератора;
+         ─ пока ключ жив, повторная генерация заблокирована;
+         ─ окно #script-sniper-arena: код чита из payload + кнопки.
+         ═══════════════════════════════════════════════════════ */
+
+      var K_KEYS     = 'rblx_private_keys';     // выданные ключи по аккаунтам
+      var KEY_PREFIX = 'SBX7';                  // префикс — как в чите
+      var KEY_SECRET = 'RBLX.PRIVATE/SNIPER-ARENA/KEYGEN/V1';
+      var KEY_TTL    = 7 * 24 * 3600;           // ровно 7 дней
+
+      /* ── CRC32: та же битовая таблица, что в Lua-части чита ── */
+      var CRC_TABLE = (function () {
+        var t = [], n, c, k;
+        for (n = 0; n < 256; n++) {
+          c = n;
+          for (k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+          t[n] = c >>> 0;
+        }
+        return t;
+      })();
+
+      function crc32(str) {
+        var crc = 0xFFFFFFFF, i;
+        for (i = 0; i < str.length; i++) {
+          crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ str.charCodeAt(i)) & 0xFF];
+        }
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+      }
+
+      /* base36 ровно из 6 символов — зеркало toB36(..., 6) в Lua */
+      function b36pad(n) {
+        var s = (n >>> 0).toString(36).toUpperCase();
+        while (s.length < 6) s = '0' + s;
+        return s;
+      }
+
+      /* Сборка нового ключа: срок окончания + подпись */
+      function makeKey() {
+        var exp = Math.floor(Date.now() / 1000) + KEY_TTL;
+        var sign = crc32(KEY_PREFIX + '|' + exp + '|' + KEY_SECRET) % 2176782336;
+        return KEY_PREFIX + '-' + exp.toString(36).toUpperCase() + '-' + b36pad(sign);
+      }
+
+      /* Проверка ключа — зеркало validateKey() из чита */
+      function keyInfo(raw) {
+        if (!raw) return { ok: false, reason: 'ключ не выдан' };
+        var key = String(raw).replace(/\s/g, '').toUpperCase();
+        var m = /^SBX7-([0-9A-Z]+)-([0-9A-Z]+)$/.exec(key);
+        if (!m) return { ok: false, reason: 'формат ключа не тот' };
+        var exp = parseInt(m[1], 36);
+        if (!exp || exp <= 0) return { ok: false, reason: 'срок не читается' };
+        var sign = b36pad(crc32(KEY_PREFIX + '|' + exp + '|' + KEY_SECRET) % 2176782336);
+        if (sign !== m[2]) return { ok: false, reason: 'подпись не сходится' };
+        if (Math.floor(Date.now() / 1000) > exp) {
+          return { ok: false, reason: 'ключ истёк', exp: exp };
+        }
+        return { ok: true, exp: exp, key: key };
+      }
+
+      function fmtDate(sec) {
+        var d = new Date(sec * 1000);
+        return d.toLocaleDateString('ru-RU') + ', ' +
+               d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      /* Кто сейчас вошёл (тот же приём, что в ЧАСТИ 9) */
+      function currentUserRec() {
+        var sess = load(K_SESSION, null);
+        var users = load(K_USERS, {});
+        return sess ? users[String(sess).toLowerCase()] : null;
+      }
+
+      /* Живой ключ аккаунта или null (истёкший — как отсутствующий) */
+      function activeKeyRec(nick) {
+        if (!nick) return null;
+        var st = load(K_KEYS, {});
+        var rec = st[String(nick).toLowerCase()];
+        if (!rec || !keyInfo(rec.key).ok) return null;
+        return rec;
+      }
+
+      /* Копирование текста (общее для ключа и кода чита) */
+      function copyText(text, done) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, fallback);
+        } else { fallback(); }
+        function fallback() {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          ta.remove();
+        }
+      }
+
+      /* ── Элементы модалки ключа ── */
+      var btnKeyGen   = document.getElementById('btnKeyGen');
+      var keyModal    = document.getElementById('keyModal');
+      var keyCodeEl   = document.getElementById('keyCode');
+      var keyTermEl   = document.getElementById('keyTerm');
+      var keyOwnerEl  = document.getElementById('keyOwner');
+      var keyStatusEl = document.getElementById('keyStatus');
+      var keyIssuedEl = document.getElementById('keyIssued');
+      var keyExpiresEl= document.getElementById('keyExpires');
+      var keyCopyBtn  = document.getElementById('keyCopy');
+      var keyRegenBtn = document.getElementById('keyRegen');
+      var keyOpen     = false;      // открыта ли генератор сейчас (для guard-ов)
+
+      /* Отрисовка состояния окна: живой ключ или «не выдан/истёк» */
+      function paintKeyState(rec) {
+        var st = load(K_KEYS, {});
+        var kr = (rec && rec.nick) ? st[rec.nick.toLowerCase()] : null;
+        var info = kr ? keyInfo(kr.key) : null;
+
+        keyOwnerEl.textContent = rec && rec.nick ? rec.nick : '—';
+
+        if (info && info.ok) {
+          keyCodeEl.textContent = kr.key;
+          keyCodeEl.className = 'key-code ready';
+          keyIssuedEl.textContent = fmtDate(kr.issued);
+          keyExpiresEl.textContent = fmtDate(info.exp);
+          keyStatusEl.textContent = 'АКТИВЕН ✓';
+          keyStatusEl.className = 'ok';
+          keyRegenBtn.disabled = true;
+          keyRegenBtn.textContent = 'АКТИВЕН ДО ' +
+            new Date(info.exp * 1000).toLocaleDateString('ru-RU');
+        } else {
+          keyCodeEl.textContent = 'SBX7-·······-······';
+          keyCodeEl.className = 'key-code pending';
+          keyIssuedEl.textContent = kr ? fmtDate(kr.issued) : '—';
+          keyExpiresEl.textContent = info && info.exp ? fmtDate(info.exp) : '—';
+          keyStatusEl.textContent = info && info.reason
+            ? String(info.reason).toUpperCase() : 'НЕ ВЫДАН';
+          keyStatusEl.className = 'dead';
+          keyRegenBtn.disabled = false;
+          keyRegenBtn.textContent = 'СГЕНЕРИРОВАТЬ';
+        }
+      }
+
+      /* Запись нового ключа в хранилище */
+      function generateKey(rec) {
+        var now = Math.floor(Date.now() / 1000);
+        var key = makeKey();
+        var st = load(K_KEYS, {});
+        st[rec.nick.toLowerCase()] = { key: key, issued: now, expires: now + KEY_TTL, nick: rec.nick };
+        save(K_KEYS, st);
+        return key;
+      }
+
+      /* Процесс выдачи: терминал → декодирование ключа (как в генераторе кода) */
+      function runGenerate(rec, animated) {
+        var step = animated ? 240 : 0;
+        var lines = [
+          '> connect: rblx.private/keygen ... OK',
+          '> account: ' + rec.nick,
+          '> ttl: 7 days (604800 sec)',
+          '> SIGNATURE CRC32 ... VERIFIED ✓'
+        ];
+
+        keyTermEl.innerHTML = '';
+        keyCodeEl.textContent = 'СБОРКА КЛЮЧА…';
+        keyCodeEl.className = 'key-code pending';
+        keyRegenBtn.disabled = true;
+
+        lines.forEach(function (text, i) {
+          setTimeout(function () {
+            if (!keyOpen) return;
+            var div = document.createElement('div');
+            div.className = 'gen-line';
+            div.textContent = text;
+            keyTermEl.appendChild(div);
+          }, step * i);
+        });
+
+        setTimeout(function () {
+          if (!keyOpen) return;
+          var key = generateKey(rec);
+          var reveal = function () {
+            paintKeyState(rec);
+            syncScriptKeyState();
+            toast('Ключ выдан: ' + key);
+          };
+          if (animated && window.__scramble) {
+            window.__scramble(keyCodeEl, key, 34, key, reveal);
+          } else {
+            keyCodeEl.textContent = key;
+            reveal();
+          }
+        }, step * lines.length + (animated ? 340 : 0));
+      }
+
+      /* Открытие модалки: свой ключ уже есть — показываем его,
+         нет или истёк — сразу выдаём новый с анимацией */
+      function openKeyModal(rec) {
+        keyOpen = true;
+        openModal(keyModal);
+
+        var st = load(K_KEYS, {});
+        var kr = st[rec.nick.toLowerCase()];
+        var info = kr ? keyInfo(kr.key) : null;
+
+        if (info && info.ok) {
+          keyTermEl.innerHTML = '';
+          var div = document.createElement('div');
+          div.className = 'gen-line';
+          div.textContent = '> ключ уже выдан · осталось ' +
+            Math.ceil((info.exp - Date.now() / 1000) / 86400) + ' дн.';
+          keyTermEl.appendChild(div);
+          paintKeyState(rec);
+          syncScriptKeyState();
+        } else {
+          runGenerate(rec, true);
+        }
+      }
+
+      function closeKeyModal() {
+        keyOpen = false;
+        closeModal(keyModal);
+        syncScriptKeyState();
+      }
+
+      /* Кнопка в ШАПКЕ: гость → регистрация, юзер → генератор */
+      btnKeyGen.addEventListener('click', function () {
+        var rec = currentUserRec();
+        if (!rec) {
+          toast('Ключ выдаётся аккаунту — сначала зарегистрируйся', 'err');
+          openModal(authModal);
+          return;
+        }
+        openKeyModal(rec);
+      });
+
+      /* Крестик, клик по затемнению */
+      keyModal.querySelectorAll('[data-close]').forEach(function (b) {
+        b.addEventListener('click', closeKeyModal);
+      });
+      keyModal.addEventListener('click', function (e) {
+        if (e.target === keyModal) closeKeyModal();
+      });
+
+      /* Копировать ключ */
+      keyCopyBtn.addEventListener('click', function () {
+        var key = (keyCodeEl.textContent || '').trim();
+        if (key.indexOf('SBX7-') !== 0) {
+          return toast('Сначала сгенерируй ключ', 'err');
+        }
+        copyText(key, function () { toast('Ключ скопирован: ' + key); });
+      });
+
+      /* Повторная генерация (активна только когда ключа нет/истёк) */
+      keyRegenBtn.addEventListener('click', function () {
+        var rec = currentUserRec();
+        if (!rec || keyRegenBtn.disabled) return;
+        runGenerate(rec, true);
+      });
+
+      /* ── СТРАНИЦА СКРИПТА (#script-sniper-arena) ──
+         АНТИ-КРАЖА: исходник чита на странице НЕ лежит.
+         Отдаём ссылку-лоадер — она тянет обфусцированный s.lua
+         с того же хоста (файл кладётся рядом с index.html).
+         URL собирается от текущего origin, поэтому работает на любом
+         домене; для file:// — запасной боевой адрес. */
+      var spLink = document.getElementById('spLink');
+      var payloadUrl = (location.protocol === 'http:' || location.protocol === 'https:')
+        ? new URL('s.lua', location.href).href
+        : 'https://robloxscriptfreeprivate.surge.sh/s.lua';
+      /* Один лайн под Xeno и любые инжекторы:
+         HttpGet → (если нет) синтетический request → loadstring.
+         ВАЖНО: имя xenoLink, а не loader — loader занято прелоадером! */
+      var xenoLink = 'local u="' + payloadUrl + '";' +
+        'local s;pcall(function()s=game:HttpGet(u,true)end);' +
+        'if not s then s=(syn and syn.request or request or http_request){Url=u,Method="GET"}.Body end;' +
+        'loadstring(s)()';
+      if (spLink) spLink.textContent = xenoLink;
+
+      /* Скопировать ссылку-лоадер */
+      var spCopy = document.getElementById('spCopy');
+      if (spCopy) {
+        spCopy.addEventListener('click', function () {
+          if (!xenoLink) return toast('Ссылка ещё собирается', 'err');
+          copyText(xenoLink, function () {
+            toast('Ссылка скопирована — вставь её в Xeno');
+          });
+        });
+      }
+
+      /* Состояние ключа на странице скрипта */
+      function syncScriptKeyState() {
+        var el = document.getElementById('spKeyState');
+        if (!el) return;
+        var rec = currentUserRec();
+        var kr = rec ? activeKeyRec(rec.nick) : null;
+        if (kr) {
+          var info = keyInfo(kr.key);
+          el.textContent = 'КЛЮЧ АКТИВЕН ДО ' +
+            new Date(info.exp * 1000).toLocaleDateString('ru-RU');
+          el.classList.remove('dead');
+        } else {
+          el.textContent = rec ? 'КЛЮЧ НЕ ВЫДАН — СГЕНЕРИРУЙ В ШАПКЕ'
+                               : 'ВОЙДИ И СГЕНЕРИРУЙ КЛЮЧ';
+          el.classList.add('dead');
+        }
+      }
+      syncScriptKeyState();
+      /* Раз в 2 секунды — чтобы статус обновился после входа/регистрации */
+      setInterval(syncScriptKeyState, 2000);
+
+      /* Кнопка «СГЕНЕРИРОВАТЬ КЕЙ» на самой странице скрипта */
+      var spKeyBtn = document.getElementById('spKeyBtn');
+      if (spKeyBtn) {
+        spKeyBtn.addEventListener('click', function () {
+          var rec = currentUserRec();
+          if (!rec) {
+            toast('Ключ выдаётся аккаунту — сначала зарегистрируйся', 'err');
+            openModal(authModal);
+            return;
+          }
+          openKeyModal(rec);
+        });
+      }
+
+      /* «← На сайт»: убираем хеш и возвращаем главный вид */
+      var spBack = document.getElementById('spBack');
+      if (spBack) {
+        spBack.addEventListener('click', function () {
+          try {
+            history.replaceState(null, '', location.pathname + location.search);
+          } catch (e) { location.hash = ''; }
+          applyView();
+        });
+      }
 
 
       /* ═══════════════════════════════════════════════════════
